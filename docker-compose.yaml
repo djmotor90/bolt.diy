@@ -1,33 +1,42 @@
+version: "3.9"
+
 services:
   bolt:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: bolt-ai-production
+    image: ghcr.io/stackblitz-labs/bolt.diy:latest
+    restart: unless-stopped
 
-    # Coolify reverse-proxy works best with expose (not host port publishing)
+    # Let Coolify handle routing via its proxy
     expose:
       - "5173"
 
+    # Only use "ports" if you are NOT using Coolify's domain/proxy routing.
+    # ports:
+    #   - "5173:5173"
+
     environment:
-      NODE_ENV: production
+      NODE_ENV: "production"
       PORT: "5173"
       RUNNING_IN_DOCKER: "true"
 
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      HuggingFace_API_KEY: ${HuggingFace_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      OPEN_ROUTER_API_KEY: ${OPEN_ROUTER_API_KEY}
-      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY}
-      OLLAMA_API_BASE_URL: ${OLLAMA_API_BASE_URL}
-      XAI_API_KEY: ${XAI_API_KEY}
-      TOGETHER_API_KEY: ${TOGETHER_API_KEY}
-      TOGETHER_API_BASE_URL: ${TOGETHER_API_BASE_URL}
-      AWS_BEDROCK_CONFIG: ${AWS_BEDROCK_CONFIG}
+      # Optional model/runtime tuning
+      DEFAULT_NUM_CTX: "${DEFAULT_NUM_CTX:-32768}"
+      VITE_LOG_LEVEL: "${VITE_LOG_LEVEL:-info}"
 
-      VITE_LOG_LEVEL: ${VITE_LOG_LEVEL:-debug}
-      DEFAULT_NUM_CTX: ${DEFAULT_NUM_CTX:-32768}
+      # Providers (set these in Coolify -> Environment Variables)
+      GROQ_API_KEY: "${GROQ_API_KEY}"
+      HuggingFace_API_KEY: "${HuggingFace_API_KEY}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+      OPEN_ROUTER_API_KEY: "${OPEN_ROUTER_API_KEY}"
+      GOOGLE_GENERATIVE_AI_API_KEY: "${GOOGLE_GENERATIVE_AI_API_KEY}"
+      XAI_API_KEY: "${XAI_API_KEY}"
+      TOGETHER_API_KEY: "${TOGETHER_API_KEY}"
+      TOGETHER_API_BASE_URL: "${TOGETHER_API_BASE_URL}"
+      AWS_BEDROCK_CONFIG: "${AWS_BEDROCK_CONFIG}"
+
+      # If you have Ollama running on the same VM, use host.docker.internal
+      # Example: http://host.docker.internal:11434
+      OLLAMA_API_BASE_URL: "${OLLAMA_API_BASE_URL}"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
