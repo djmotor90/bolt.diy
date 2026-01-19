@@ -2,27 +2,23 @@ version: "3.9"
 
 services:
   bolt:
-    image: ghcr.io/stackblitz-labs/bolt.diy:latest
+    image: node:20-alpine
+    working_dir: /app
     restart: unless-stopped
 
-    # Let Coolify handle routing via its proxy
+    # Coolify proxy routing
     expose:
       - "5173"
-
-    # Only use "ports" if you are NOT using Coolify's domain/proxy routing.
-    # ports:
-    #   - "5173:5173"
 
     environment:
       NODE_ENV: "production"
       PORT: "5173"
+      HOST: "0.0.0.0"
       RUNNING_IN_DOCKER: "true"
 
-      # Optional model/runtime tuning
       DEFAULT_NUM_CTX: "${DEFAULT_NUM_CTX:-32768}"
       VITE_LOG_LEVEL: "${VITE_LOG_LEVEL:-info}"
 
-      # Providers (set these in Coolify -> Environment Variables)
       GROQ_API_KEY: "${GROQ_API_KEY}"
       HuggingFace_API_KEY: "${HuggingFace_API_KEY}"
       OPENAI_API_KEY: "${OPENAI_API_KEY}"
@@ -33,12 +29,21 @@ services:
       TOGETHER_API_KEY: "${TOGETHER_API_KEY}"
       TOGETHER_API_BASE_URL: "${TOGETHER_API_BASE_URL}"
       AWS_BEDROCK_CONFIG: "${AWS_BEDROCK_CONFIG}"
-
-      # If you have Ollama running on the same VM, use host.docker.internal
-      # Example: http://host.docker.internal:11434
       OLLAMA_API_BASE_URL: "${OLLAMA_API_BASE_URL}"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-    command: "pnpm run dockerstart"
+    # Pull your repo code into the container by letting Coolify mount it
+    # This requires enabling "Preserve Repository During Deployment" in Coolify.
+    #
+    # If you do NOT enable preserve repository, then Coolify won't have the code here and this won't work.
+    #
+    command: >
+      sh -lc "
+        corepack enable &&
+        corepack prepare pnpm@9.15.0 --activate &&
+        pnpm install --frozen-lockfile=false &&
+        pnpm run build &&
+        pnpm run preview --host 0.0.0.0 --port 5173
+      "
